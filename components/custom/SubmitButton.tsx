@@ -1,12 +1,13 @@
 import Image from "next/image";
 
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 
 interface ButtonProps {
   isLoading: boolean;
   className?: string;
   children: React.ReactNode;
   disabled?: boolean;
+  onClick?: () => void;
 }
 
 const SubmitButton = ({
@@ -14,12 +15,14 @@ const SubmitButton = ({
   className,
   children,
   disabled,
+  onClick,
 }: ButtonProps) => {
   return (
     <Button
       type="submit"
       disabled={isLoading || disabled}
       className={className ?? "shad-primary-btn w-full"}
+      onClick={onClick}
     >
       {isLoading ? (
         <div className="flex items-center gap-4">

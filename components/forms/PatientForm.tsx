@@ -14,12 +14,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import CustomFormField from "../CustomFormField";
-import SubmitButton from "../SubmitButton";
+import { useToast } from "@/hooks/use-toast";
+import { createUser } from "../../lib/actions/patient.actions";
+import { useRouter } from "next/navigation";
+import CustomFormField, { FormFieldType } from "../custom/CustomFormField";
+import SubmitButton from "../custom/SubmitButton";
+import { UserFormValidation } from "@/lib/validation";
 
 export enum FieldsType {
   INPUT = "input",
+  PASSWORD = "password",
   CHECKBOX = "checkbox",
   TEXTAREA = "textarea",
   PHONE_INPUT = "phone_input",
@@ -28,23 +32,11 @@ export enum FieldsType {
   SKELETON = "skeleton",
 }
 export default function PatientForm() {
-  const formSchema = z.object({
-    name: z
-      .string()
-      .min(2, {
-        message: "name must be at least 2 characters.",
-      })
-      .max(50, {
-        message: "name must be at least 2 characters.",
-      }),
-    email: z.string().email("Invalid email"),
-    phone: z.string().refine((value) => /^\d{10,15}$/.test(value), {
-      message: "Invalid phone number",
-    }),
-  });
+  const { toast } = useToast();
+  const router = useRouter();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof UserFormValidation>>({
+    resolver: zodResolver(UserFormValidation),
     defaultValues: {
       name: "",
       email: "",
@@ -52,8 +44,24 @@ export default function PatientForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  async function onSubmit({
+    name,
+    email,
+    phone,
+  }: z.infer<typeof UserFormValidation>) {
+    try {
+      const userData = { name, email, phone };
+
+      const user = await createUser(userData);
+      if (user) router.push(`/patients/${user?.$id}/register`);
+      console.log(user);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: "There was a problem with your request.",
+      });
+    }
   }
 
   return (
@@ -64,9 +72,10 @@ export default function PatientForm() {
           <p className="text-dark-700">Schedule your first appointment</p>
           <p></p>
         </section>
+
         <CustomFormField
           control={form.control}
-          fieldsType={FieldsType.INPUT}
+          fieldType={FormFieldType.INPUT}
           name="name"
           label="Full name"
           placeholder="Enter your full name"
@@ -75,22 +84,21 @@ export default function PatientForm() {
         />
         <CustomFormField
           control={form.control}
-          fieldsType={FieldsType.INPUT}
+          fieldType={FormFieldType.INPUT}
           name="email"
           label="Email"
           placeholder="Enter your email"
           iconSrc="/assets/icons/email.svg"
           iconAlt="User"
         />
-
         <CustomFormField
+          fieldType={FormFieldType.PHONE_INPUT}
           control={form.control}
-          fieldsType={FieldsType.PHONE_INPUT}
           name="phone"
-          placeholder="Phone number"
-          label="Phone number"
-          iconAlt="phone"
+          label="Phone Number"
+          placeholder="(555) 123-4567"
         />
+
         <SubmitButton isLoading={false}>Get Started</SubmitButton>
       </form>
     </Form>
